@@ -13,7 +13,7 @@ try:
     from pykeepass import PyKeePass
 
     HAS_LIB = True
-except ModuleNotFoundError or NameError:
+except (ModuleNotFoundError, NameError):
     HAS_LIB = False
     LIB_IMP_ERR = traceback.format_exc()
 
