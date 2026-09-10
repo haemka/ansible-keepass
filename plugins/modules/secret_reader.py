@@ -47,6 +47,12 @@ options:
             this path to locate the extracted files.
         required: false
         type: str
+    attachment_filenames:
+        description: Only used together with extract_attachments_to. If set, only attachments
+            whose filename is in this list are extracted, instead of all of them.
+        required: false
+        type: list
+        elements: str
 author:
     - Hasni Mehdi (@hasnimehdi91)
     - hasnimehdi@outlook.com
@@ -69,6 +75,18 @@ EXAMPLES = r'''
     db_password: "password"
     secret_path: "/foo/bar"
     extract_attachments_to: "/tmp/bar_attachments"
+  register: secret
+- debug: var=secret
+
+# Read secret and extract only specific attachments
+- name: Read secret and extract one attachment
+  hasnimehdi91.keepass.secret_reader:
+    db_path: "keys.kdbx"
+    db_password: "password"
+    secret_path: "/foo/bar"
+    extract_attachments_to: "/tmp/bar_attachments"
+    attachment_filenames:
+      - "id_rsa"
   register: secret
 - debug: var=secret
 '''
@@ -113,6 +131,7 @@ def run_module():
         db_password=dict(type='str', required=True, no_log=True),
         secret_path=dict(type='str', required=True),
         extract_attachments_to=dict(type='str', required=False),
+        attachment_filenames=dict(type='list', elements='str', required=False),
     )
 
     # Keepass module result initialization
@@ -131,6 +150,9 @@ def run_module():
     if not HAS_LIB:
         module.fail_json(msg=missing_required_lib("pykeepass"), exception=LIB_IMP_ERR)
 
+    if module.params['attachment_filenames'] and not module.params['extract_attachments_to']:
+        module.fail_json(msg="attachment_filenames requires extract_attachments_to to be set")
+
     # Return module result
     if module.check_mode:
         module.exit_json(**result)
@@ -140,7 +162,8 @@ def run_module():
         db_password = module.params['db_password']
         db = PyKeePass(filename=db_path, password=db_password)
 
-        secret_dic = secret_to_dic(db, module.params['secret_path'], module.params['extract_attachments_to'])
+        secret_dic = secret_to_dic(db, module.params['secret_path'], module.params['extract_attachments_to'],
+                                   module.params['attachment_filenames'])
     except Exception as e:
         module.fail_json(msg="Failed to read keepass secret", exception=e)
 
@@ -153,13 +176,15 @@ def run_module():
     module.exit_json(**result)
 
 
-def secret_to_dic(db: PyKeePass, secret_path: str, extract_attachments_to: str = None) -> dict:
+def secret_to_dic(db: PyKeePass, secret_path: str, extract_attachments_to: str = None,
+                  attachment_filenames: list = None) -> dict:
     """
     Read secret from Keepass and convert it to a dic
     Args:
         db: Keepass database
         secret_path: Secret path
         extract_attachments_to: If set, write the secret's attachments as files into this directory
+        attachment_filenames: If set, only extract attachments whose filename is in this list
     Returns: dic
     """
 
@@ -200,21 +225,24 @@ def secret_to_dic(db: PyKeePass, secret_path: str, extract_attachments_to: str =
     if entry.attachments:
         secret[path[-1]]["attachments"] = [attachment.filename for attachment in entry.attachments]
         if extract_attachments_to:
-            _extract_attachments(entry, extract_attachments_to)
+            _extract_attachments(entry, extract_attachments_to, attachment_filenames)
 
     # Return secret
     return secret
 
 
-def _extract_attachments(entry, directory: str) -> None:
+def _extract_attachments(entry, directory: str, attachment_filenames: list = None) -> None:
     """
     Write an entry's attachments as files into the given directory
     Args:
         entry: Keepass entry
         directory: Destination directory on the control node
+        attachment_filenames: If set, only extract attachments whose filename is in this list
     """
     os.makedirs(directory, exist_ok=True)
     for attachment in entry.attachments:
+        if attachment_filenames and attachment.filename not in attachment_filenames:
+            continue
         with open(os.path.join(directory, attachment.filename), 'wb') as f:
             f.write(attachment.data)
 
