@@ -225,6 +225,11 @@ def secret_write(secret_path: str, db: PyKeePass, db_path: str, username: str = 
     Returns: dict
     """
 
+    # pykeepass builds the entry's UserName/Password XML nodes directly from these
+    # values and cannot handle None, so default unset ones to an empty string.
+    username = username or ''
+    password = password or ''
+
     # Check if secret path was not provided
     if secret_path is None or secret_path == '' or secret_path.isspace():
         raise ValueError("secret_path is required")
