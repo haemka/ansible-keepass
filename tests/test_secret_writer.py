@@ -54,6 +54,39 @@ def test_force_replaces_entry(db, kdbx_path, reopen_db):
     assert secret["mysecret"]["username"] == "jane"
 
 
+def test_force_replaces_entry_with_custom_properties(db, kdbx_path, reopen_db):
+    secret_writer.secret_write(secret_path="mysecret", db=db, db_path=kdbx_path, username="john")
+    db2 = reopen_db()
+    secret, changed = secret_writer.secret_write(
+        secret_path="mysecret", db=db2, db_path=kdbx_path, username="jane",
+        custom_properties={"gender": "Female"}, force=True,
+    )
+    assert changed is True
+    assert secret["mysecret"]["gender"] == "Female"
+
+
+def test_idempotent_without_force_nested(db, kdbx_path, reopen_db):
+    secret_writer.secret_write(secret_path="grp/mysecret", db=db, db_path=kdbx_path, username="john")
+    db2 = reopen_db()
+    secret, changed = secret_writer.secret_write(
+        secret_path="grp/mysecret", db=db2, db_path=kdbx_path, username="jane",
+    )
+    assert changed is False
+    assert secret["mysecret"]["username"] == "john"
+
+
+def test_force_replaces_entry_nested(db, kdbx_path, reopen_db):
+    secret_writer.secret_write(secret_path="grp/mysecret", db=db, db_path=kdbx_path, username="john")
+    db2 = reopen_db()
+    secret, changed = secret_writer.secret_write(
+        secret_path="grp/mysecret", db=db2, db_path=kdbx_path, username="jane",
+        custom_properties={"gender": "Female"}, force=True,
+    )
+    assert changed is True
+    assert secret["mysecret"]["username"] == "jane"
+    assert secret["mysecret"]["gender"] == "Female"
+
+
 def test_url_and_custom_properties_round_trip(db, kdbx_path):
     secret, changed = secret_writer.secret_write(
         secret_path="mysecret", db=db, db_path=kdbx_path,
