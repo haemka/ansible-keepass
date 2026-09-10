@@ -1,0 +1,42 @@
+name: Release to Galaxy
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Verify tag matches galaxy.yml version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          galaxy_version=$(python3 -c "import yaml; print(yaml.safe_load(open('galaxy.yml'))['version'])")
+          if [ "$tag_version" != "$galaxy_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match galaxy.yml version $galaxy_version"
+            exit 1
+          fi
+
+      - name: Build the collection
+        run: ansible-galaxy collection build . --output-path build
+
+      - name: Publish to Ansible Galaxy
+        run: ansible-galaxy collection publish build/*.tar.gz --api-key "${{ secrets.GALAXY_API_KEY }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/*.tar.gz
+          generate_release_notes: true
