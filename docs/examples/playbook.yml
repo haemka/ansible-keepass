@@ -3,7 +3,7 @@
   become: no
   connection: local
   tasks:
-  - hasnimehdi91.keepass.secret_reader:
+  - haemka.keepass.secret_reader:
       db_path: "secrets.kdbx"
       db_password: "password"
       secret_path: "foo/bar/secret"
@@ -17,7 +17,7 @@
   become: no
   connection: local
   tasks:
-  - hasnimehdi91.keepass.group_reader:
+  - haemka.keepass.group_reader:
       db_path: "secrets.kdbx"
       db_password: "password"
       group_path: "foo/bar"

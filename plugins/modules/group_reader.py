@@ -54,14 +54,14 @@ options:
         type: list
         elements: str
 author:
-    - Hasni Mehdi (@hasnimehdi91)
-    - hasnimehdi@outlook.com
+    - Hasni Mehdi (@hasnimehdi91) <hasnimehdi@outlook.com>
+    - haemka (@haemka) <github@haemka.net>
 '''
 
 EXAMPLES = r'''
 # Read group secrets
 - name: Read group secrets
-  hasnimehdi91.keepass.group_reader:
+  haemka.keepass.group_reader:
     db_path: "keys.kdbx"
     db_password: "password"
     group_path: "/foo/bar"
@@ -70,7 +70,7 @@ EXAMPLES = r'''
 
 # Read group secrets and extract their attachments to disk
 - name: Read group secrets and extract attachments
-  hasnimehdi91.keepass.group_reader:
+  haemka.keepass.group_reader:
     db_path: "keys.kdbx"
     db_password: "password"
     group_path: "/foo/bar"
@@ -80,7 +80,7 @@ EXAMPLES = r'''
 
 # Read group secrets and extract only specific attachments
 - name: Read group secrets and extract one attachment per entry
-  hasnimehdi91.keepass.group_reader:
+  haemka.keepass.group_reader:
     db_path: "keys.kdbx"
     db_password: "password"
     group_path: "/foo/bar"
