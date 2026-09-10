@@ -73,7 +73,8 @@ data:
         description: Group path
         type: str
     group:
-        description: List of dict containing the group secrets
+        description: List of dict containing the group secrets, including username, password,
+            url, custom properties and attachment filenames when set.
         type: [dic]
         returned: always
 '''
@@ -176,10 +177,14 @@ def group_to_dic(db: PyKeePass, group_path: str) -> dict:
             secret[entry.path[-1]]["username"] = entry.username
         if entry.password:
             secret[entry.path[-1]]["password"] = entry.password
+        if entry.url:
+            secret[entry.path[-1]]["url"] = entry.url
 
         if entry.custom_properties and type(entry.custom_properties) is dict:
             for k in entry.custom_properties:
                 secret[entry.path[-1]][k] = entry.custom_properties[k]
+        if entry.attachments:
+            secret[entry.path[-1]]["attachments"] = [attachment.filename for attachment in entry.attachments]
         group_secrets.append(secret)
 
     return group_secrets

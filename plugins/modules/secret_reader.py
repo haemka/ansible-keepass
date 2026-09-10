@@ -72,7 +72,8 @@ data:
         description: Secret path
         type: str
     secret:
-        description: Dictionary containing the secret data
+        description: Dictionary containing the secret data, including username, password,
+            url, custom properties and attachment filenames when set.
         type: dic
         returned: always
 '''
@@ -166,9 +167,13 @@ def secret_to_dic(db: PyKeePass, secret_path: str) -> dict:
         secret[path[-1]]["username"] = entry.username
     if entry.password:
         secret[path[-1]]["password"] = entry.password
+    if entry.url:
+        secret[path[-1]]["url"] = entry.url
     if entry.custom_properties and type(entry.custom_properties) is dict:
         for k in entry.custom_properties:
             secret[path[-1]][k] = entry.custom_properties[k]
+    if entry.attachments:
+        secret[path[-1]]["attachments"] = [attachment.filename for attachment in entry.attachments]
 
     # Return secret
     return secret

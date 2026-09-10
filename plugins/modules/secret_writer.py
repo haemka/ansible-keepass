@@ -129,7 +129,8 @@ data:
         description: Secret path
         type: str
     secret:
-        description: Dictionary containing the secret data
+        description: Dictionary containing the secret data, including username, password,
+            url, custom properties and attachment filenames when set.
         type: dict
         returned: always
 '''
@@ -391,6 +392,8 @@ def _convert_secret_to_dic(path: [], entry: dict, changed: bool) -> (dict, bool)
         secret[path[-1]]["username"] = entry.username
     if entry.password:
         secret[path[-1]]["password"] = entry.password
+    if entry.url:
+        secret[path[-1]]["url"] = entry.url
     if entry.custom_properties and type(entry.custom_properties) is dict:
         for k in entry.custom_properties:
             secret[path[-1]][k] = entry.custom_properties[k]
