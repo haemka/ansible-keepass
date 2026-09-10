@@ -83,8 +83,8 @@ options:
         type: bool
         default: false
 author:
-    - Hasni Mehdi (@hasnimehdi91)
-    - hasnimehdi@outlook.com
+    - Hasni Mehdi (@hasnimehdi91) <hasnimehdi@outlook.com>
+    - haemka (@haemka) <github@haemka.net>
 '''
 
 EXAMPLES = r'''
@@ -103,7 +103,7 @@ EXAMPLES = r'''
 
 # Write secret
 - name: Write secret
-  hasnimehdi91.keepass.secret_writer:
+  haemka.keepass.secret_writer:
     db_path: "keys.kdbx"
     db_password: "password"
     secret_path: "/foo/bar"

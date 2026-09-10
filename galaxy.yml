@@ -1,11 +1,14 @@
-namespace: hasnimehdi91
+namespace: haemka
 name: keepass
-version: 1.0.2
+version: 1.1.0
 readme: README.md
 authors:
 - Hasni Mehdi <hasnimehdi@outlook.com>
+- haemka <github@haemka.net>
 description: |
-  Keepass collection to securely read and write data from and to keepass in an ansible playbook or role.
+  Ansible collection for reading and writing KeePass secrets.
+  Fork of hasnimehdi91.keepass (https://github.com/Black-Cockpit/keepass) by Hasni Mehdi, extended with
+  attachment support, fuller read/write field parity, and a test suite.
 license_file: 'LICENSE'
 tags:
 - keepass
@@ -16,10 +19,10 @@ tags:
 - keepass_module
 - secure_variables
 dependencies: {}
-repository: https://github.com/Black-Cockpit/keepass
-documentation: https://github.com/Black-Cockpit/keepass/blob/master/doc
-homepage: https://github.com/Black-Cockpit/keepass
-issues: https://github.com/Black-Cockpit/keepass/issues
+repository: https://github.com/haemka/ansible-keepass
+documentation: https://github.com/haemka/ansible-keepass/blob/master/doc
+homepage: https://github.com/haemka/ansible-keepass
+issues: https://github.com/haemka/ansible-keepass/issues
 build_ignore:
 - "local_**.*"
 - "*.ini"

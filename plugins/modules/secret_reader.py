@@ -54,14 +54,14 @@ options:
         type: list
         elements: str
 author:
-    - Hasni Mehdi (@hasnimehdi91)
-    - hasnimehdi@outlook.com
+    - Hasni Mehdi (@hasnimehdi91) <hasnimehdi@outlook.com>
+    - haemka (@haemka) <github@haemka.net>
 '''
 
 EXAMPLES = r'''
 # Read secret
 - name: Read secret
-  hasnimehdi91.keepass.secret_reader:
+  haemka.keepass.secret_reader:
     db_path: "keys.kdbx"
     db_password: "password"
     secret_path: "/foo/bar"
@@ -70,7 +70,7 @@ EXAMPLES = r'''
 
 # Read secret and extract its attachments to disk
 - name: Read secret and extract attachments
-  hasnimehdi91.keepass.secret_reader:
+  haemka.keepass.secret_reader:
     db_path: "keys.kdbx"
     db_password: "password"
     secret_path: "/foo/bar"
@@ -80,7 +80,7 @@ EXAMPLES = r'''
 
 # Read secret and extract only specific attachments
 - name: Read secret and extract one attachment
-  hasnimehdi91.keepass.secret_reader:
+  haemka.keepass.secret_reader:
     db_path: "keys.kdbx"
     db_password: "password"
     secret_path: "/foo/bar"

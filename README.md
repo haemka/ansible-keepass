@@ -1,6 +1,13 @@
-# Ansible Collection - hasnimehdi91.keepass
+# Ansible Collection - haemka.keepass
 
-This collection provides modules that allows to read data from KeePass file.
+Ansible collection for reading and writing KeePass secrets.
+
+## Credits
+
+This is a fork of [hasnimehdi91.keepass](https://github.com/Black-Cockpit/keepass) by
+Hasni Mehdi, which laid the groundwork for all three modules. This fork adds file
+attachment support, fuller read/write field parity between the modules, and a test
+suite, and fixes a couple of bugs (some of which were also contributed back upstream).
 
 ## How it works
 
@@ -10,7 +17,7 @@ The secret_reader, group_reader  and secret_writer helps on managing the secrets
 Requirements: `python 3`, `pykeepass==4.0.6`
 
     pip install 'pykeepass==4.0.6' --user
-    ansible-galaxy collection install hasnimehdi91.keepass
+    ansible-galaxy collection install haemka.keepass
 
 ## Testing
 
@@ -27,7 +34,7 @@ subprocess:
 ## Modules
 
 ---
-- **Module** : `hasnimehdi91.keepass.secret_reader`
+- **Module** : `haemka.keepass.secret_reader`
   - `db_path`     : Path to KeePass file
   - `db_password` : Password of KeePass file
   - `secret_path` : Path to secret in of KeePass file
@@ -40,7 +47,7 @@ subprocess:
     - one key per custom property, e.g. `secret_value.custom_properties.gender` on write comes back as `secret.<name>.gender`
     - `attachments`: list of attachment filenames
 ---
-- **Module** : `hasnimehdi91.keepass.group_reader`
+- **Module** : `haemka.keepass.group_reader`
   - `db_path`     : Path to KeePass file
   - `db_password` : Password of KeePass file
   - `group_path`  : Path to group in of KeePass file
@@ -48,7 +55,7 @@ subprocess:
   - `attachment_filenames` : Only used together with `extract_attachments_to`. If set, only attachments whose filename is in this list are extracted, instead of all of them.
   - Returns `group`, a list of per-entry dicts with the same fields as `secret_reader`'s `secret` above
 ---
-- **Module** : `hasnimehdi91.keepass.secret_writer`
+- **Module** : `haemka.keepass.secret_writer`
   - `db_path`       : Path to KeePass file
   - `db_password`   : Password of KeePass file
   - `secret_path`   : Path to secret in of KeePass file
@@ -77,7 +84,7 @@ subprocess:
   become: no
   connection: local
   tasks:
-  - hasnimehdi91.keepass.secret_reader:
+  - haemka.keepass.secret_reader:
       db_path: "secrets.kdbx"
       db_password: "password"
       secret_path: "foo/bar/secret"
@@ -100,7 +107,7 @@ ansible-playbook playbook.yml
   become: no
   connection: local
   tasks:
-  - hasnimehdi91.keepass.group_reader:
+  - haemka.keepass.group_reader:
       db_path: "secrets.kdbx"
       db_password: "password"
       group_path: "foo/bar"
@@ -133,7 +140,7 @@ ansible-playbook playbook.yml
 
 # Write secret
 - name: Write secret
-  hasnimehdi91.keepass.secret_writer:
+  haemka.keepass.secret_writer:
     db_path: "keys.kdbx"
     db_password: "password"
     secret_path: "/foo/bar"
