@@ -12,6 +12,17 @@ Requirements: `python 3`, `pykeepass==4.0.6`
     pip install 'pykeepass==4.0.6' --user
     ansible-galaxy collection install hasnimehdi91.keepass
 
+## Testing
+
+    pip install -r requirements-dev.txt
+    pytest
+
+To check coverage, including the module-contract tests that run each module as a
+subprocess:
+
+    KEEPASS_TEST_COVERAGE=1 coverage run --parallel-mode -m pytest
+    coverage combine
+    coverage report -m
 
 ## Modules
 
