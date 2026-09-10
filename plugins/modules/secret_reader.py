@@ -165,7 +165,7 @@ def run_module():
         secret_dic = secret_to_dic(db, module.params['secret_path'], module.params['extract_attachments_to'],
                                    module.params['attachment_filenames'])
     except Exception as e:
-        module.fail_json(msg="Failed to read keepass secret", exception=e)
+        module.fail_json(msg="Failed to read keepass secret: {0}".format(str(e)), exception=traceback.format_exc())
 
     result['secret'] = secret_dic
     result['path'] = module.params['secret_path']
