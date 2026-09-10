@@ -14,9 +14,9 @@ suite, and fixes a couple of bugs (some of which were also contributed back upst
 The secret_reader, group_reader  and secret_writer helps on managing the secrets of a keepass database with the ability to integrate it in automated tasks.
 ## Installation
 
-Requirements: `python 3`, `pykeepass==4.0.6`
+Requirements: `python 3`, `pykeepass==4.2.0`
 
-    pip install 'pykeepass==4.0.6' --user
+    pip install 'pykeepass==4.2.0' --user
     ansible-galaxy collection install haemka.keepass
 
 ## Testing
