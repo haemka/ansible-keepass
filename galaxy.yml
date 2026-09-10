@@ -20,7 +20,7 @@ tags:
 - secure_variables
 dependencies: {}
 repository: https://github.com/haemka/ansible-keepass
-documentation: https://github.com/haemka/ansible-keepass/blob/master/doc
+documentation: https://github.com/haemka/ansible-keepass/blob/master/README.md
 homepage: https://github.com/haemka/ansible-keepass
 issues: https://github.com/haemka/ansible-keepass/issues
 build_ignore:
@@ -29,7 +29,13 @@ build_ignore:
 - "*.kdbx"
 - "*.txt"
 - ".vscode"
-- "*.venv"
+- "venv"
+- ".venv"
 - ".git*"
 - "*.cfg"
+- "tests"
+- "pyproject.toml"
+- ".pytest_cache"
+- ".coverage"
+- ".coverage.*"
 
