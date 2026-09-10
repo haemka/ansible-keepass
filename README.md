@@ -20,11 +20,13 @@ Requirements: `python 3`, `pykeepass==4.0.6`
   - `db_path`     : Path to KeePass file
   - `db_password` : Password of KeePass file
   - `secret_path` : Path to secret in of KeePass file
+  - `extract_attachments_to` : If set, write the secret's attachments as files into this directory
 ---
-- **Module** : `hasnimehdi91.keepass.secret_reader`
+- **Module** : `hasnimehdi91.keepass.group_reader`
   - `db_path`     : Path to KeePass file
   - `db_password` : Password of KeePass file
-  - `secret_path` : Path to secret in of KeePass file
+  - `group_path`  : Path to group in of KeePass file
+  - `extract_attachments_to` : If set, write each entry's attachments as files into a subdirectory (named after the entry) of this directory
 ---
 - **Module** : `hasnimehdi91.keepass.secret_writer`
   - `db_path`       : Path to KeePass file

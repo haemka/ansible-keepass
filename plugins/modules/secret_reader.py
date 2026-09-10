@@ -4,6 +4,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
 
+import os.path
 import traceback
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 
@@ -40,6 +41,12 @@ options:
         description: Keepass secret path.
         required: true
         type: str
+    extract_attachments_to:
+        description: If set, write the secret's attachments as files into this directory on the
+            control node. The attachment filenames returned in the secret data can be joined with
+            this path to locate the extracted files.
+        required: false
+        type: str
 author:
     - Hasni Mehdi (@hasnimehdi91)
     - hasnimehdi@outlook.com
@@ -52,6 +59,16 @@ EXAMPLES = r'''
     db_path: "keys.kdbx"
     db_password: "password"
     secret_path: "/foo/bar"
+  register: secret
+- debug: var=secret
+
+# Read secret and extract its attachments to disk
+- name: Read secret and extract attachments
+  hasnimehdi91.keepass.secret_reader:
+    db_path: "keys.kdbx"
+    db_password: "password"
+    secret_path: "/foo/bar"
+    extract_attachments_to: "/tmp/bar_attachments"
   register: secret
 - debug: var=secret
 '''
@@ -76,6 +93,10 @@ data:
             url, custom properties and attachment filenames when set.
         type: dic
         returned: always
+    attachments_extracted_to:
+        description: The directory attachments were written to, when extract_attachments_to was set.
+        type: str
+        returned: when extract_attachments_to is set
 '''
 
 
@@ -91,6 +112,7 @@ def run_module():
         db_path=dict(type='str', required=True),
         db_password=dict(type='str', required=True, no_log=True),
         secret_path=dict(type='str', required=True),
+        extract_attachments_to=dict(type='str', required=False),
     )
 
     # Keepass module result initialization
@@ -118,23 +140,26 @@ def run_module():
         db_password = module.params['db_password']
         db = PyKeePass(filename=db_path, password=db_password)
 
-        secret_dic = secret_to_dic(db, module.params['secret_path'])
+        secret_dic = secret_to_dic(db, module.params['secret_path'], module.params['extract_attachments_to'])
     except Exception as e:
         module.fail_json(msg="Failed to read keepass secret", exception=e)
 
     result['secret'] = secret_dic
     result['path'] = module.params['secret_path']
+    if module.params['extract_attachments_to']:
+        result['attachments_extracted_to'] = module.params['extract_attachments_to']
 
     # Exit with result
     module.exit_json(**result)
 
 
-def secret_to_dic(db: PyKeePass, secret_path: str) -> dict:
+def secret_to_dic(db: PyKeePass, secret_path: str, extract_attachments_to: str = None) -> dict:
     """
     Read secret from Keepass and convert it to a dic
     Args:
         db: Keepass database
         secret_path: Secret path
+        extract_attachments_to: If set, write the secret's attachments as files into this directory
     Returns: dic
     """
 
@@ -174,9 +199,24 @@ def secret_to_dic(db: PyKeePass, secret_path: str) -> dict:
             secret[path[-1]][k] = entry.custom_properties[k]
     if entry.attachments:
         secret[path[-1]]["attachments"] = [attachment.filename for attachment in entry.attachments]
+        if extract_attachments_to:
+            _extract_attachments(entry, extract_attachments_to)
 
     # Return secret
     return secret
+
+
+def _extract_attachments(entry, directory: str) -> None:
+    """
+    Write an entry's attachments as files into the given directory
+    Args:
+        entry: Keepass entry
+        directory: Destination directory on the control node
+    """
+    os.makedirs(directory, exist_ok=True)
+    for attachment in entry.attachments:
+        with open(os.path.join(directory, attachment.filename), 'wb') as f:
+            f.write(attachment.data)
 
 
 def main():
