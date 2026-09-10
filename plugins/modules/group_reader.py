@@ -4,6 +4,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
 
+import os.path
 import traceback
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 
@@ -41,6 +42,17 @@ options:
         description: Keepass group path.
         required: true
         type: str
+    extract_attachments_to:
+        description: If set, write each entry's attachments as files into a subdirectory (named
+            after the entry) of this directory on the control node.
+        required: false
+        type: str
+    attachment_filenames:
+        description: Only used together with extract_attachments_to. If set, only attachments
+            whose filename is in this list are extracted, instead of all of them.
+        required: false
+        type: list
+        elements: str
 author:
     - Hasni Mehdi (@hasnimehdi91)
     - hasnimehdi@outlook.com
@@ -53,6 +65,28 @@ EXAMPLES = r'''
     db_path: "keys.kdbx"
     db_password: "password"
     group_path: "/foo/bar"
+  register: group
+- debug: var=group
+
+# Read group secrets and extract their attachments to disk
+- name: Read group secrets and extract attachments
+  hasnimehdi91.keepass.group_reader:
+    db_path: "keys.kdbx"
+    db_password: "password"
+    group_path: "/foo/bar"
+    extract_attachments_to: "/tmp/bar_attachments"
+  register: group
+- debug: var=group
+
+# Read group secrets and extract only specific attachments
+- name: Read group secrets and extract one attachment per entry
+  hasnimehdi91.keepass.group_reader:
+    db_path: "keys.kdbx"
+    db_password: "password"
+    group_path: "/foo/bar"
+    extract_attachments_to: "/tmp/bar_attachments"
+    attachment_filenames:
+      - "id_rsa"
   register: group
 - debug: var=group
 '''
@@ -73,9 +107,14 @@ data:
         description: Group path
         type: str
     group:
-        description: List of dict containing the group secrets
+        description: List of dict containing the group secrets, including username, password,
+            url, custom properties and attachment filenames when set.
         type: [dic]
         returned: always
+    attachments_extracted_to:
+        description: The directory attachments were written to, when extract_attachments_to was set.
+        type: str
+        returned: when extract_attachments_to is set
 '''
 
 
@@ -91,6 +130,8 @@ def run_module():
         db_path=dict(type='str', required=True),
         db_password=dict(type='str', required=True, no_log=True),
         group_path=dict(type='str', required=True),
+        extract_attachments_to=dict(type='str', required=False),
+        attachment_filenames=dict(type='list', elements='str', required=False),
     )
 
     # Keepass module result initialization
@@ -109,6 +150,9 @@ def run_module():
     if not HAS_LIB:
         module.fail_json(msg=missing_required_lib("pykeepass"), exception=LIB_IMP_ERR)
 
+    if module.params['attachment_filenames'] and not module.params['extract_attachments_to']:
+        module.fail_json(msg="attachment_filenames requires extract_attachments_to to be set")
+
     # Return module result
     if module.check_mode:
         module.exit_json(**result)
@@ -118,23 +162,30 @@ def run_module():
         db_password = module.params['db_password']
         db = PyKeePass(filename=db_path, password=db_password)
 
-        group_secret_dic = group_to_dic(db, module.params['group_path'])
+        group_secret_dic = group_to_dic(db, module.params['group_path'], module.params['extract_attachments_to'],
+                                        module.params['attachment_filenames'])
     except Exception as e:
         module.fail_json(msg="Failed to read keepass group secrets", exception=e)
 
     result['group'] = group_secret_dic
     result['path'] = module.params['group_path']
+    if module.params['extract_attachments_to']:
+        result['attachments_extracted_to'] = module.params['extract_attachments_to']
 
     # Exit with result
     module.exit_json(**result)
 
 
-def group_to_dic(db: PyKeePass, group_path: str) -> dict:
+def group_to_dic(db: PyKeePass, group_path: str, extract_attachments_to: str = None,
+                 attachment_filenames: list = None) -> dict:
     """
     Read group secrets from Keepass and convert them to  list of dictionary [dic]
     Args:
         db: Keepass database
         group_path: Secret path
+        extract_attachments_to: If set, write each entry's attachments as files into a
+            subdirectory (named after the entry) of this directory
+        attachment_filenames: If set, only extract attachments whose filename is in this list
     Returns: [dic]
     """
     # Init group secrets list
@@ -176,13 +227,35 @@ def group_to_dic(db: PyKeePass, group_path: str) -> dict:
             secret[entry.path[-1]]["username"] = entry.username
         if entry.password:
             secret[entry.path[-1]]["password"] = entry.password
+        if entry.url:
+            secret[entry.path[-1]]["url"] = entry.url
 
         if entry.custom_properties and type(entry.custom_properties) is dict:
             for k in entry.custom_properties:
                 secret[entry.path[-1]][k] = entry.custom_properties[k]
+        if entry.attachments:
+            secret[entry.path[-1]]["attachments"] = [attachment.filename for attachment in entry.attachments]
+            if extract_attachments_to:
+                _extract_attachments(entry, os.path.join(extract_attachments_to, entry.path[-1]), attachment_filenames)
         group_secrets.append(secret)
 
     return group_secrets
+
+
+def _extract_attachments(entry, directory: str, attachment_filenames: list = None) -> None:
+    """
+    Write an entry's attachments as files into the given directory
+    Args:
+        entry: Keepass entry
+        directory: Destination directory on the control node
+        attachment_filenames: If set, only extract attachments whose filename is in this list
+    """
+    os.makedirs(directory, exist_ok=True)
+    for attachment in entry.attachments:
+        if attachment_filenames and attachment.filename not in attachment_filenames:
+            continue
+        with open(os.path.join(directory, attachment.filename), 'wb') as f:
+            f.write(attachment.data)
 
 
 def main():
