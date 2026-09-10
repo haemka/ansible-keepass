@@ -21,12 +21,21 @@ Requirements: `python 3`, `pykeepass==4.0.6`
   - `db_password` : Password of KeePass file
   - `secret_path` : Path to secret in of KeePass file
   - `extract_attachments_to` : If set, write the secret's attachments as files into this directory
+  - `attachment_filenames` : Only used together with `extract_attachments_to`. If set, only attachments whose filename is in this list are extracted, instead of all of them.
+  - Returns `secret`, a dict keyed by the secret's name, containing whichever of these are set on the entry:
+    - `username`
+    - `password`
+    - `url`
+    - one key per custom property, e.g. `secret_value.custom_properties.gender` on write comes back as `secret.<name>.gender`
+    - `attachments`: list of attachment filenames
 ---
 - **Module** : `hasnimehdi91.keepass.group_reader`
   - `db_path`     : Path to KeePass file
   - `db_password` : Password of KeePass file
   - `group_path`  : Path to group in of KeePass file
   - `extract_attachments_to` : If set, write each entry's attachments as files into a subdirectory (named after the entry) of this directory
+  - `attachment_filenames` : Only used together with `extract_attachments_to`. If set, only attachments whose filename is in this list are extracted, instead of all of them.
+  - Returns `group`, a list of per-entry dicts with the same fields as `secret_reader`'s `secret` above
 ---
 - **Module** : `hasnimehdi91.keepass.secret_writer`
   - `db_path`       : Path to KeePass file
@@ -39,6 +48,12 @@ Requirements: `python 3`, `pykeepass==4.0.6`
   - `secret_value.custom_properties:`: Secret customer properties (key, value)
   - `secret_value.attachments:`: List of files to attach to the entry, each with `path` (file on the control node) and optional `filename` (defaults to the basename of `path`)
   -  `force`: If set to true the secret will be overridden, Default is false
+  - Returns `secret`, a dict keyed by the secret's name, containing whichever of these are set on the entry:
+    - `username`
+    - `password`
+    - `url`
+    - one key per custom property, e.g. `secret_value.custom_properties.gender` comes back as `secret.<name>.gender`
+    - `attachments`: list of attachment filenames
 ---
 
 ## Usage
