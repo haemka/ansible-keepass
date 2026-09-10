@@ -64,6 +64,19 @@ options:
             description: Secret custom properties
             type: dict
             required: false
+        attachments:
+            description: List of files to attach to the secret entry
+            type: list
+            required: false
+            elements: dict
+            path:
+                description: Path to the file on the control node to attach
+                type: str
+                required: true
+            filename:
+                description: Filename to store the attachment as. Defaults to the basename of path.
+                type: str
+                required: false
     force:
         description: If set to true the secret will be overridden
         required: false
@@ -84,6 +97,9 @@ EXAMPLES = r'''
         password: "Doe"
         custom_properties:
             gender: "Male"
+        attachments:
+            - path: "/home/user/.ssh/id_rsa"
+              filename: "id_rsa"
 
 # Write secret
 - name: Write secret
@@ -139,7 +155,8 @@ def run_module():
             username=dict(type='str', required=False),
             password=dict(type='str', required=False, no_log=False),
             url=dict(type='str', required=False),
-            custom_properties=dict(type='dict', required=False)
+            custom_properties=dict(type='dict', required=False),
+            attachments=dict(type='list', elements='dict', required=False, no_log=True)
         ),
         force=dict(type='bool', required=False, default=False)
     )
@@ -191,12 +208,17 @@ def run_module():
         secret_custom_properties = module.params['secret_value']['custom_properties'] if (
                 ('secret_value' in module.params) and ('custom_properties' in module.params['secret_value'])) else None
 
+        # Init secret attachments
+        secret_attachments = module.params['secret_value']['attachments'] if (
+                ('secret_value' in module.params) and ('attachments' in module.params['secret_value'])) else None
+
         # Init force override
         force = True if (('force' in module.params) and (module.params['force'] is True)) else False
 
         secret_dic, changed = secret_write(secret_path=module.params['secret_path'], db=db, db_path=db_path,
                                            username=secret_username, password=secret_password, url=secret_url,
-                                           custom_properties=secret_custom_properties, force=force)
+                                           custom_properties=secret_custom_properties, attachments=secret_attachments,
+                                           force=force)
     except Exception as e:
         module.fail_json(msg="Failed to write keepass secret", exception=e)
 
@@ -209,7 +231,8 @@ def run_module():
 
 
 def secret_write(secret_path: str, db: PyKeePass, db_path: str, username: str = None, password: str = None,
-                 url: str = None, custom_properties: dict = None, force: bool = False) -> (dict, bool):
+                 url: str = None, custom_properties: dict = None, attachments: list = None,
+                 force: bool = False) -> (dict, bool):
     """
     Write a secret to Keepass and return its data as a dict
     Args:
@@ -221,6 +244,7 @@ def secret_write(secret_path: str, db: PyKeePass, db_path: str, username: str = 
         url: Secret url
         url: Secret url
         custom_properties: Secret custom properties
+        attachments: List of dict ({"path", "filename"}) of files to attach to the entry
         force: Indicates if the secret should be replaced if it exists or not.
     Returns: dict
     """
@@ -251,6 +275,7 @@ def secret_write(secret_path: str, db: PyKeePass, db_path: str, username: str = 
             if custom_properties is not None and type(custom_properties) is dict:
                 for k in custom_properties:
                     entry.set_custom_property(key=str(k), value=str(custom_properties[k]))
+            _add_attachments(db, entry, attachments)
             db.save(db_path)
             return _convert_secret_to_dic(path, entry, True)
         else:
@@ -260,6 +285,7 @@ def secret_write(secret_path: str, db: PyKeePass, db_path: str, username: str = 
             if custom_properties and type(custom_properties) is dict:
                 for k in custom_properties:
                     entry.set_custom_property(key=str(k), value=str(custom_properties[k]))
+            _add_attachments(db, entry, attachments)
             db.save(db_path)
             return _convert_secret_to_dic(path, entry, True)
     else:
@@ -308,6 +334,7 @@ def secret_write(secret_path: str, db: PyKeePass, db_path: str, username: str = 
         if custom_properties and type(custom_properties) is dict:
             for k in custom_properties:
                 entry.set_custom_property(key=str(k), value=str(custom_properties[k]))
+        _add_attachments(db, entry, attachments)
         db.save(db_path)
     else:
         # Create new secret
@@ -316,9 +343,37 @@ def secret_write(secret_path: str, db: PyKeePass, db_path: str, username: str = 
         if custom_properties and type(custom_properties) is dict:
             for k in custom_properties:
                 entry.set_custom_property(key=str(k), value=str(custom_properties[k]))
+        _add_attachments(db, entry, attachments)
         db.save(db_path)
 
     return _convert_secret_to_dic(path, entry, True)
+
+
+def _add_attachments(db: PyKeePass, entry, attachments: list) -> bool:
+    """
+    Read attachment files from the control node, store them as binaries in the
+    Keepass database and reference them on the given entry.
+    Args:
+        db: Keepass database
+        entry: Keepass entry the attachments should be added to
+        attachments: List of dict ({"path", "filename"}) of files to attach
+    Returns: bool indicating if at least one attachment was added
+    """
+    if not attachments:
+        return False
+
+    for attachment in attachments:
+        attachment_path = attachment['path']
+        filename = attachment.get('filename') or os.path.basename(attachment_path)
+
+        # Attachment content must be read as bytes
+        with open(attachment_path, 'rb') as f:
+            data = f.read()
+
+        binary_id = db.add_binary(data, compressed=True, protected=True)
+        entry.add_attachment(binary_id, filename)
+
+    return True
 
 
 def _convert_secret_to_dic(path: [], entry: dict, changed: bool) -> (dict, bool):
@@ -334,6 +389,8 @@ def _convert_secret_to_dic(path: [], entry: dict, changed: bool) -> (dict, bool)
     if entry.custom_properties and type(entry.custom_properties) is dict:
         for k in entry.custom_properties:
             secret[path[-1]][k] = entry.custom_properties[k]
+    if entry.attachments:
+        secret[path[-1]]["attachments"] = [attachment.filename for attachment in entry.attachments]
 
     # Return secret
     return secret, changed

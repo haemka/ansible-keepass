@@ -35,6 +35,7 @@ Requirements: `python 3`, `pykeepass==4.0.6`
   - `secret_value.password:`: Secret password
   - `secret_value.url:`: Secret password
   - `secret_value.custom_properties:`: Secret customer properties (key, value)
+  - `secret_value.attachments:`: List of files to attach to the entry, each with `path` (file on the control node) and optional `filename` (defaults to the basename of `path`)
   -  `force`: If set to true the secret will be overridden, Default is false
 ---
 
@@ -98,6 +99,9 @@ ansible-playbook playbook.yml
         password: "Doe"
         custom_properties:
             gender: "Male"
+        attachments:
+            - path: "/home/user/.ssh/id_rsa"
+              filename: "id_rsa"
 
 # Write secret
 - name: Write secret
