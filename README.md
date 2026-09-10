@@ -12,6 +12,10 @@ Requirements: `python 3`, `pykeepass==4.0.6`
     pip install 'pykeepass==4.0.6' --user
     ansible-galaxy collection install hasnimehdi91.keepass
 
+## Testing
+
+    pip install -r requirements-dev.txt
+    pytest
 
 ## Modules
 
